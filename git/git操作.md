@@ -176,12 +176,16 @@ git config --global user.email.test@cy.com
 
 **指定版本库**
 
-
 * git diff 某个具体版本 ：查看工作区与具体某个提交版本之间的所有的文件差异
 * git diff 某个具体版本 file_name ：查看工作区与具体某个版本之间的 指定文件名的文件差异
 * git diff 某个具体版本 -- file1_name file2_name ：查看工作区与最具体某个版本之间的 指定文件名的多个文件差异
 
+###### 情景三 -- 暂存区与版本库
 
+* git diff --cached : 查看暂存区和 上一次提交 的最新版本(HEAD)之间的所有文件差异
+* git diff --cached 版本号 ： 查看暂存区和 指定版本 之间的所有文件差异
+* git diff --cached -- 文件名1 文件名2 文件名3 ： 查看暂存区和 HEAD 之间的指定文件差异
+* git diff --cached 版本号 -- 文件名1 文件名2 文件名3 ： 查看暂存区和 指定版本 之间的指定文件差异
 
 
 
