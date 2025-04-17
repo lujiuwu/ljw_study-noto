@@ -145,6 +145,52 @@ git config --global user.email.test@cy.com
 > Git 的工作就是创建和保存你项目的快照及与之后的快照进行对比
 > Git 常用的是以下 6 个命令：**git clone**、**git push**、**git add** 、**git commit**、**git checkout**、**git pull**
 
+#### HEAD
+
+> 在 Git 里，`HEAD` 是一个十分关键的概念，它代表着当前所在的提交位置
+
+**基本含义**
+
+`HEAD` 本质上是一个指向当前分支上最新提交对象的引用。你可以把它想象成一个指针，这个指针指向当前工作目录所基于的提交。换而言之，`HEAD` 表明了你当前处于项目历史中的哪个位置
+
+
+**HEAD的相对引用**
+
+* 在 Git 中，你可以使用 `HEAD` 的相对引用进行快速定位。常见的相对引用符号有 `^` 和 `~`
+     * HEAD^ -- ^读作caret；表示 `HEAD` 所指向提交的父提交
+     * HEAD~n -- 表示 `HEAD` 所指向提交的第 `n` 代祖先提交
+
+**分离HEAD状态**
+
+* 分离 `HEAD` 状态指的是 `HEAD` 不再指向某个分支，而是直接指向一个具体的提交对象
+* 在该状态中，`HEAD` 脱离了分支的控制，你可以在这个特定的提交上进行操作，比如查看历史版本、做一些临时的实验性修改等。不过要注意，在分离 `HEAD` 状态下创建的新提交不会关联到任何现有分支，除非你后续创建了新分支并将这些提交包含进去，否则这些提交可能会在后续操作中丢失
+
+**分离HEAD状态回到正常分支**
+```git
+git checkout main
+git switch main
+```
+
+**分离HEAD状态创建新分支**
+如果你在分离 `HEAD` 状态下做了一些有用的提交，想要保存这些更改，可以创建一个新分支来包含这些提交
+
+```git
+git switch -c new-branch
+```
+
+#### commit-hash
+
+> 在 Git 里，每次提交都会生成一个唯一的标识符，这个标识符就是 `commit-hash`
+
+**获取方法 -- git log**
+```git
+git log --oneline
+```
+
+* 执行这个命令后，会输出简洁的提交历史，每行前面的字符串就是 `commit-hash` 的简写形式
+* 如果需要完整的 `commit-hash`，可以去掉 `--oneline` 选项
+
+
 #### 创建仓库
 
 * **git init** -- 初始化仓库
@@ -154,7 +200,28 @@ git config --global user.email.test@cy.com
 
 ##### git add -- 添加文件到暂存区
 
+> **git add** 命令可将该文件的修改添加到暂存区
+> 告诉 Git 哪些文件的修改应该包含在下一次提交（commit）中
+
+* git add file1_name file2_name ：添加多个文件
+* git add dir ：添加目录（包括子目录）
+* git add . ：添加当前目录所有文件
+
+
+
+
+
 ##### git status -- 查看仓库当前的状态，显示有变更的文件
+
+> **git status** 是一个用于查看 Git 仓库当前状态的命令
+> **git status** 命令可以查看在你上次提交之后是否有对文件进行再次修改
+
+**git status显示信息**
+
+- 当前分支的名称。
+- 当前分支与远程分支的关系（例如，是否是最新的）。
+- 未暂存的修改：显示已修改但尚未使用 `git add` 添加到暂存区的文件列表。
+- 未跟踪的文件：显示尚未纳入版本控制的新文件列表。
 
 ##### git diff -- 比较工作区，暂存区与版本库的差异
 
@@ -187,7 +254,12 @@ git config --global user.email.test@cy.com
 * git diff --cached -- 文件名1 文件名2 文件名3 ： 查看暂存区和 HEAD 之间的指定文件差异
 * git diff --cached 版本号 -- 文件名1 文件名2 文件名3 ： 查看暂存区和 指定版本 之间的指定文件差异
 
+###### 情景四 -- 查看不同版本库 之间文件的差异
 
+* git diff 版本号1 版本号2 ： 查看两个版本之间的差异
+* git diff 版本号1 版本号2 -- 文件名1 文件名2 ： 查看两个版本之间的指定文件之间的差异
+* git diff 版本号1 版本号2 --stat : 查看两个版本之间的改动的文件列表
+* git diff 版本号1 版本号2 src : 查看两个版本之间的文件夹 src (具名)的差异
 
 
 ##### git difftool -- 使用外部差异工具查看和比较文件的更改
@@ -224,18 +296,428 @@ git config --global diff.tool meld
 git config --global difftool.meld.cmd 'meld "$BASE" "$LOCAL" "$REMOTE" --diff "$MERGED"'
 ```
 
+**配置difftool等价物**
+
+* 如果尚未定义difftool等价物，则git difftool回退到git mergetool配置变量。
+
+##### git range-diff -- 比较两个提交范围之间的差异
+
+> git range-diff命令用于比较`两个提交范围`之间的差异。
+> git range-diff命令与 git diff 类似，但允许你同时比较两个不同的提交范围，通常用于查看`一系列提交在不同分支或不同版本之间的变化`。
+> **这对于代码审查和变更比较特别有用。**
+
+**基本使用**
+
+```git
+git range-diff <old-range> <new-range>
+```
+
+* **`<old-range>`**：旧的提交范围或分支。
+- **`<new-range>`**：新的提交范围或分支。
+
+**范围表示**
+
+提交范围可以用提交哈希、分支名称或者其他标识符表示。如果不指定参数，则默认使用当前分支的 HEAD
+
+**常见用法**
+* 比较两个分支的提交范围
+```git
+git range-diff branch1 branch2
+```
+
+* 比较两个提交系列
+  `比较两个提交系列的差异，查看在特定时间段内的`
+```git
+git range-diff HEAD~10..HEAD~5 HEAD~5..HEAD
+```
+`这里，HEAD~10..HEAD~5 表示旧的提交范围，HEAD~5..HEAD 表示新的提交范围。`
+
+##### git commit  -- 提交暂存区到本地仓库
+
+> git commit命令将暂存区内容添加到本地仓库
+
+**基本用法**
+
+```git
+git commit -m "message"
+```
+
+* message可以是一些备注信息
+
+**提交指定文件**
+
+```git
+git commit [fileName] [fileName]...-m "message"
+```
+
+###### message参数
+
+> `message` 参数通过 `-m` 选项指定；作用是为提交操作添加描述性的文本信息
+> 帮助你和其他开发者快速了解此次提交的内容与目的
+
+**不使用message参数**
+
+* 在使用`git commit`命令时，`message`参数并非绝对必需，但建议始终提供有意义的提交信息
+* 当你直接运行`git commit`而不添加`-m`选项时，Git 会打开默认的文本编辑器（如 Vim、Nano 等，具体取决于你的系统配置），让你在其中输入提交信息。在编辑器中输入完成后，保存并退出，提交操作才会完成
+![](images/Snipaste_2025-04-17_13-11-52.jpg)
+
+**多行描述信息**
+
+* 多次使用 `-m` 选项
+```git
+git commit -m "line1" -m "line2"
+```
+
+* 使用git commit指令 在默认的文本编辑器输入多行提交信息
+
+
+###### -a参数
+
+* -a参数是 `--all` 的简写
+* 当你在 `git commit` 命令中使用 `-a` 参数时，Git 会自动把所有已经被跟踪（即之前已经添加到版本控制中的文件）且发生了修改或者删除操作的文件添加到暂存区，然后进行提交
+* 但要注意，它不会处理那些`新创建的、尚未被 Git 跟踪的文件`
+
+**注意**
+- **适用场景**：当你对多个已跟踪文件进行了修改，并且希望一次性提交所有这些修改时，使用 `-a` 参数可以节省时间和精力，避免逐个添加文件到暂存区的繁琐操作。
+- **局限性**：`-a` 参数只对已跟踪的文件有效，对于新创建的文件，你仍然需要使用 `git add` 命令将其添加到版本控制中，然后才能进行提交。
+- **谨慎使用**：在使用 `-a` 参数时，要确保你清楚所有已跟踪文件的修改情况，因为它会将所有修改一并提交，可能会把一些你不希望提交的更改也包含进去。如果有部分修改不想提交，可以使用 `git add` 只添加特定的文件或使用 `git reset` 撤销暂存区的修改。
 
 
 
 
-##### git range-diff -- 比较两个提交氛围之间的差异
+
+##### git reset -- 回退版本
+
+> git reset命令用于回退版本，可以指定退回到某一次提交的版本
+
+**基础使用**
+```git
+git reset [--soft | --mixed | --hard] [HEAD]
+```
+
+**关于参数选项**
+* `--mixed `表示默认，可以`不用携带参数，`用于重置暂存区的文件与上一次的提交(commit)保持一致，工作区文件内容保持不变
+
+```git
+git reset HEAD^ // 回退所有内容到上一个版本
+git reset HEAD^ hello.md // 回退hello.md文件的版本到上一个版本
+git reset 0444 // 回退到指定版本
+```
+
+* `--soft` 参数用于回退到某个版本
+
+```git
+git reset HEAD~3 // 回退到上上上个版本
+```
+
+* `-hard` 参数撤销工作区中所有未提交的修改内容，将暂存区与工作区都回到上一次版本，并删除之前的所有信息提交
+
+```git
+git reset --hard HEAD~3  # 回退上上上一个版本  
+git reset –-hard bae128  # 回退到某个版本回退点之前的所有信息。 
+git reset --hard origin/master    # 将本地的状态回退到和远程的一样 
+```
+
+**git reset HEAD**
+* 取消之前使用 `git add` 命令添加到暂存区的内容，将文件从暂存区移除，但不会影响工作区中文件的实际内容
+
+##### git rm -- 将文件从暂存区和工作区移除
+
+> git rm命令用于删除文件；
+> 如果只是简单的从工作目录删除文件，运行git status时会提示`Changes not staged for commit`
+
+**git rm删除文件的形式**
+
+* 将文件从暂存区和工作区删除
+  `会把这个删除操作记录下来，下次提交时，这个文件的删除会成为提交内容的一部分`
+```git
+git rm file_name
+```
+
+* -f参数 强制删除
+  `如果删除之前已经修改但没有提交到暂存区 需要使用强制删除选项-f`
+  `因为 Git 认为这种情况下你可能还需要保留这些修改，所以会给出提示，避免你误删重要数据`
+```git
+git rm -f file_name
+```
+
+* -cached参数 仅是从跟踪清单中删除
+  `想把文件从暂存区域移除，但仍然希望保留在当前工作目录中`
+```git
+git rm -cached file_name
+```
+
+* 递归删除 
+  `如果后面跟的是一个目录做为参数，则会递归删除整个目录中的所有子目录和文件`
+```git
+git rm -r directory_name
+
+git rm --recursive directory_name
+```
+
+##### git mv -- 移动或重命名工作区文件
+
+> git mv命令用于移动或重命名一个文件，目录或软连接
+> git mv命令直接影响工作区；还会自动更新暂存区的内容
+
+**重命名**
+* 基础使用
+```git
+git mv file_name new_file_name
+```
+
+* 强制改名 -- 强制覆盖已存在同名目标文件或目录
+```git
+git mv -f file_name new_file_name
+```
+
+**移动文件位置**
+* 基础使用
+```git
+git mv file_name directory/
+```
+
+* 强制移动 -- 强制覆盖目录下已经的同名文件
+```git
+git mv -f file_name directory/
+```
+
+##### git notes -- 添加注释
+
+> git notes命令允许用户将附加注释添加到提交中
+> `注释不会修改提交的内容，而是附加到提交的元数据中，便于记录额外的信息，如审查备注、额外说明等`
+
+**基础使用**
+```git
+git notes <subcommand> [options] [arguments]
+```
+
+* < subcommand > -- 具体的操作子命令（如 `add`, `show`, `list`, `remove`, `edit`, `merge` 等）
+* [ opttions ] -- 命令的选项或参数
+* [ arguments ] -- 命令的附加参数，人提交哈希值等
+
+**添加注释**
+```git
+git notes add -m "message" // 添加注释到当前提交
+git notes add -m "message" <commit-hash> // 添加注释到特定提交
+```
+
+**查看注释**
+```git
+git notes show <commit-hash>
+```
+
+**列出所有注释**
+```git
+// 列出当前分支上所有提交的注释
+git notes list
+```
+
+**删除注释**
+```git
+// 删除特定提交的注释
+git notes remove <commit-hash>
+
+// 删除所有注释（不常用）
+git notes remove
+```
+
+**修改注释**
+```git
+// 修改当前提交的注释
+git notes edit
+```
+
+**推送和拉取注释**
+```git
+// 推送注释到远程仓库
+git push origin refs/notes/*
+
+// 拉取远程注释
+git fetch origin refs/notes/*:refs/notes/*
+```
+
+##### git checkout -- 切换分支
+
+> git checkout命令用于在不同的分支之间切换，恢复文件，创建新分支等操作
+
+**切换分支**
+```git
+git checkout branch-name
+```
+
+**创建新分支并切换**
+```git
+git checkout -b branch-name
+```
+
+**切换到前一个分支**
+```git
+git checkout -
+```
+
+**检出文件**
+`可以将工作区指定文件 <file> 恢复到最近一次提交时的状态，丢弃所有未提交的更改，这对于撤销不需要的更改非常有用`
+```git
+git checkout <file>
+```
+
+**切换到特定提交**
+`你可以使用提交的哈希值 <commit-hash> 来切换到特定的提交状态。这将使你进入"分离头指针"状态，只能查看历史记录，而不能进行分支操作`
+```git
+git checkout <commit-hash>
+```
+
+**切换到标签**
+```git
+git checkout tags/<tag-name>
+```
+
+##### git switch -- 更加清晰的切换分支
+
+> Git 2.23引入
+> **git switch** 命令用于更清晰地切换分支
+> **git switch** 命令作用与 git checkout 类似，但提供了更清晰的语义和错误检查
+
+**切换分支**
+```git
+git switch <branch-name>
+```
+
+**创建新分支并切换**
+```git
+git switch -c <new-branch-name>
+```
+
+**切换到前一个分支**
+```git
+git switch -
+```
+
+**切换到特定状态**
+```git
+git switch <commit-hash>
+```
+
+**常用参数**
+* -c / --create
+  `穿件一个新的分支并切换到该分支`
+* -C / --force-create
+  `强制创建分支，重置并切换同名分支`
+* -d / --depth
+  `切换到分离HEAD状态，直接指向指定的提交，而不是依附于某个分支`
+* --guess
+  `当省略分支名时，Git 会尝试猜测你想要切换到的分支。通常它会尝试切换到与当前检出的文件匹配的上游分支`
+* -f / --force
+  `强制切换分支，即使当前分支有未提交的更改。使用该参数时要谨慎，因为可能会导致未保存的工作丢失`
+
+##### git restore -- 恢复或撤销文件的修改
+
+> Git 2.23版本引入
+> 用于简化和改进文件恢复操作，相比于旧的命令（如 `git checkout` 和 `git reset`），它更专注于恢复文件内容和工作区状态
+> 可以恢复工作区和暂存区中的文件，也可以用于丢弃未提交的更改
+
+**基础用法**
+```git
+git restore options pathspec
+```
+
+* options -- 用于定制恢复行为的选项
+* pathspec -- 要恢复文件或目录路径
+
+**恢复工作区文件** -- 将工作区中的文件恢复到暂存区的状态
+```git
+git restore file_name
+git restore -W file_name // 让命令意图更清晰
+```
+
+**恢复暂存区文件** -- 将暂存区中的文件恢复到 `HEAD` 所指向的提交版本
+```git
+git restore --staged file_name
+```
+
+**恢复暂存区文件 特定版本**
+```git
+git restore --source=ab123 file_name
+```
+
+**合并冲突**
+* 恢复文件的“我们”版本
+```git
+git restore --ours file_name
+```
+ * 恢复文件的“他们”版本
+```git
+git restore --theirs file_name
+```
+
+##### git show -- 显示Git对象的详细信息
+
+> `git show` 命令用于查看提交、标签、树对象或其他 Git 对象的内容
+> 这个命令对于审查提交历史、查看提交的具体内容以及调试 Git 对象非常有用
+
+**显示提交的详细信息**
+```git
+git show <commit-hash>
+```
+
+**显示提交中包含的差异**
+```git
+git show --patch <commit-hash>
+```
+
+**显示提交中更改的文件名**
+```git
+git show --name-only <commit-hash>
+```
+
+**显示提交的统计信息**
+```git
+git show --stat <commit-hash>
+```
+
+#### 提交日志
+
+##### git log -- 查看历史提交记录
+
+> 查看 Git 提交历史可以帮助你了解代码的变更情况和开发进度
+> Git 提供了多种命令和选项来查看提交历史，从简单的日志到详细的差异对比
+
+**基本使用**
+```git
+git log [选项] [分支名/提交哈希]
+```
+
+* 不使用选项 -- 打印详细信息
+* --online -- 以简介的一行格式显示提交信息
+* --graph -- 以图形化形式显示分支和合并历史
+
+##### git blame -- 以列表形式查看指定文件的历史修改记录
+
+##### git shortlog -- 生成简介的提交日志概要
+
+##### git describe -- 生成一个基于Git的标签系统来描述当前提交的字符串
+
+#### 远程操作
+
+##### git remote -- 远程仓库操作
+##### git fetch -- 从远程获取代码
+
+##### git pull -- 下载远程代码并合并
+
+##### git push -- 上传远程代码并合并
+
+##### git submodule -- 管理包含其他Git仓库的项目
 
 
 
 
+### 分支管理
 
+### 快捷操作
 
-
+* 退出git diff  -- q+回车
+* 清屏( 视口屏，实际只是将当前行提到滚轮之前 ) -- ctrl+L
 
 
 
